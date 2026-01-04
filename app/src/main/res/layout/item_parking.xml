@@ -1,45 +1,59 @@
-<?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
-    android:elevation="4dp">
+    app:cardElevation="4dp"
+    app:cardCornerRadius="8dp">
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
         android:padding="16dp">
 
         <TextView
             android:id="@+id/tvArea"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="אזור"
-            android:textStyle="bold"
-            android:textSize="18sp"/>
+            android:textAppearance="@style/TextAppearance.App.Title"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            tools:text="אזור: תל אביב" />
 
         <TextView
             android:id="@+id/tvDescription"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="תיאור החניה"
-            android:layout_marginTop="4dp"/>
+            android:layout_marginTop="8dp"
+            android:textAppearance="@style/TextAppearance.App.Body"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvArea"
+            app:layout_constraintEnd_toEndOf="parent"
+            tools:text="תיאור החניה..." />
 
         <TextView
             android:id="@+id/tvReporter"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="שם המדווח"
-            android:textSize="12sp"
-            android:textColor="#555555"/>
+            android:layout_marginTop="16dp"
+            android:textAppearance="@style/TextAppearance.App.Caption"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvDescription"
+            tools:text="דווח ע''י: דני" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnLike"
+            style="@style/Widget.App.Button.LikeButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="לייק"
-            android:layout_marginTop="8dp"/>
+            android:layout_marginTop="8dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvDescription"
+            tools:text="0" />
 
-    </LinearLayout>
-</androidx.cardview.widget.CardView>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>

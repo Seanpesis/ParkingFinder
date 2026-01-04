@@ -4,11 +4,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-import android.widget.Button;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.parkingfinder.R;
 import com.example.parkingfinder.model.ParkingReport;
+import com.google.android.material.button.MaterialButton;
 import java.util.ArrayList;
 
 // מחלקה שמנהלת את התצוגה של הרשימה
@@ -26,12 +26,11 @@ public class ParkingAdapter extends RecyclerView.Adapter<ParkingAdapter.ParkingV
     @NonNull
     @Override
     public ParkingViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        // טעינת קובץ ה-XML של שורה בודדת (ניצור אותו בהמשך)
+        // טעינת קובץ ה-XML של שורה בודדת
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_parking, parent, false);
         return new ParkingViewHolder(view);
     }
 
-    // חיבור המידע (Data) לתצוגה (View)
     @Override
     public void onBindViewHolder(@NonNull ParkingViewHolder holder, int position) {
         // שליפת הדיווח הנוכחי לפי המיקום ברשימה
@@ -41,7 +40,7 @@ public class ParkingAdapter extends RecyclerView.Adapter<ParkingAdapter.ParkingV
         holder.tvArea.setText("אזור: " + currentReport.getArea());
         holder.tvDescription.setText(currentReport.getDescription());
         holder.tvReporter.setText("דווח ע''י: " + currentReport.getReportedBy());
-        holder.btnLike.setText("לייקים: " + currentReport.getLikesCount());
+        holder.btnLike.setText(String.valueOf(currentReport.getLikesCount()));
 
         // האזנה ללחיצה על כפתור לייק
         holder.btnLike.setOnClickListener(v -> {
@@ -58,7 +57,6 @@ public class ParkingAdapter extends RecyclerView.Adapter<ParkingAdapter.ParkingV
         });
     }
 
-    // כמה פריטים יש ברשימה?
     @Override
     public int getItemCount() {
         return parkingList.size();
@@ -67,11 +65,10 @@ public class ParkingAdapter extends RecyclerView.Adapter<ParkingAdapter.ParkingV
     // מחלקה פנימית שמחזיקה את הרכיבים של שורה אחת
     public static class ParkingViewHolder extends RecyclerView.ViewHolder {
         TextView tvArea, tvDescription, tvReporter;
-        Button btnLike;
+        MaterialButton btnLike;
 
         public ParkingViewHolder(@NonNull View itemView) {
             super(itemView);
-            // מציאת הרכיבים לפי ה-ID שלהם בקובץ ה-XML
             tvArea = itemView.findViewById(R.id.tvArea);
             tvDescription = itemView.findViewById(R.id.tvDescription);
             tvReporter = itemView.findViewById(R.id.tvReporter);

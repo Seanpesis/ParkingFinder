@@ -2,11 +2,17 @@ package com.example.parkingfinder;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.appcompat.widget.Toolbar;
+
+
 import com.example.parkingfinder.adapter.ParkingAdapter;
 import com.example.parkingfinder.model.ParkingReport;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -15,66 +21,91 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
+    // הגדרת משתנים
     private RecyclerView recyclerView;
     private ParkingAdapter adapter;
-    private ArrayList<ParkingReport> reportsList; // הרשימה המקומית שלנו
+    private ArrayList<ParkingReport> reportsList;
+
     private DatabaseReference mDatabase; // חיבור למסד הנתונים
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_main); // חיבור לקובץ העיצוב שהוכן למעלה
 
-        // אתחול הרשימה
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
         reportsList = new ArrayList<>();
 
-        // חיבור לרכיבי התצוגה
+        //  חיבור לרכיבים במסך
         recyclerView = findViewById(R.id.recyclerView);
+        FloatingActionButton fabAdd = findViewById(R.id.fabAdd);
+        Button btnGoToMap = findViewById(R.id.btnGoToMap);
+
+        //  הגדרת ה-RecyclerView
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        adapter = new ParkingAdapter(reportsList); // יצירת האדפטר
+        recyclerView.setAdapter(adapter); // חיבור האדפטר לרשימה
 
-        // אתחול האדפטר עם הרשימה הריקה (שתתמלא עוד רגע)
-        adapter = new ParkingAdapter(reportsList);
-        recyclerView.setAdapter(adapter);
-
-        // חיבור ל-Firebase לתיקיית "reports"
+        //  חיבור ל-Firebase
         mDatabase = FirebaseDatabase.getInstance().getReference("reports");
 
-        // --- קריאת הנתונים מהענן ---
-        // אנחנו מוסיפים "מאזין" (Listener) שפועל כל פעם שיש שינוי בנתונים
+        //  הפעלת האזנה לשינויים במסד הנתונים
+        getAllReportsFromFirebase();
+
+        fabAdd.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, AddReportActivity.class);
+                startActivity(intent);
+            }
+        });
+
+        btnGoToMap.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, MapsActivity.class);
+                startActivity(intent);
+            }
+        });
+    }
+
+    // פונקציה שקוראת את הנתונים ומעדכנת את הרשימה בזמן אמת
+    private void getAllReportsFromFirebase() {
         mDatabase.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                // שלב 1: מנקים את הרשימה הישנה כדי לא ליצור כפילויות
+                // מנקים את הרשימה הישנה כדי לא ליצור כפילויות
                 reportsList.clear();
 
-                // שלב 2: רצים בלולאה על כל הדיווחים שהגיעו מהענן
-                for (DataSnapshot postSnapshot : snapshot.getChildren()) {
-                    // המרת המידע הגולמי (JSON) לאובייקט Java מסוג ParkingReport
-                    ParkingReport report = postSnapshot.getValue(ParkingReport.class);
+                // רצים על כל הדיווחים שיש בענן
+                for (DataSnapshot data : snapshot.getChildren()) {
+                    ParkingReport report = data.getValue(ParkingReport.class);
+
                     // הוספה לרשימה שלנו
-                    reportsList.add(report);
+                    if (report != null) {
+                        reportsList.add(report);
+                    }
                 }
 
-                // שלב 3: מודיעים לאדפטר שהמידע השתנה כדי שיצייר מחדש את המסך
+                // מודיעים לאדפטר שהמידע התעדכן
                 adapter.notifyDataSetChanged();
+
+                if (!reportsList.isEmpty()) {
+                    recyclerView.scrollToPosition(reportsList.size() - 1);
+                }
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                // טיפול במקרה של שגיאה (למשל אין אינטרנט או הרשאות)
-                Toast.makeText(MainActivity.this, "שגיאה בטעינת נתונים", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "שגיאה בטעינת הנתונים", Toast.LENGTH_SHORT).show();
             }
-        });
-
-        // כפתור הוספה
-        FloatingActionButton fab = findViewById(R.id.fabAdd);
-        fab.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, AddReportActivity.class);
-            startActivity(intent);
         });
     }
 }

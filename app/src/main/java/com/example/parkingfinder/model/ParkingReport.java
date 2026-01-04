@@ -5,8 +5,10 @@ public class ParkingReport {
     private String description;
     private String reportedBy;
     private int likesCount;
+    private double latitude;
+    private double longitude;
 
-    // --- חובה: בנאי ריק עבור Firebase ---
+    // בנאי ריק עבור Firebase
     public ParkingReport() {
         // Firebase משתמש בזה כדי לבנות את האובייקט כשהוא מוריד מידע
     }
@@ -23,13 +25,15 @@ public class ParkingReport {
     public String getDescription() { return description; }
     public String getReportedBy() { return reportedBy; }
     public int getLikesCount() { return likesCount; }
-
-    // Setters (חובה בשביל Firebase)
+    public double getLatitude() { return latitude; }
+    public void setLatitude(double latitude) { this.latitude = latitude; }
+    // Setters
     public void setArea(String area) { this.area = area; }
     public void setDescription(String description) { this.description = description; }
     public void setReportedBy(String reportedBy) { this.reportedBy = reportedBy; }
     public void setLikesCount(int likesCount) { this.likesCount = likesCount; }
-
+    public double getLongitude() { return longitude; }
+    public void setLongitude(double longitude) { this.longitude = longitude; }
     public void addLike() {
         this.likesCount++;
     }

@@ -19,7 +19,7 @@ public class DataManager {
         reports.add(report); // מוסיף את הדיווח למערך
     }
 
-    // פונקציה ליצירת נתונים התחלתיים (רק בשביל שיהיה מה לראות)
+    // פונקציה ליצירת נתונים התחלתיים
     static {
         reports.add(new ParkingReport("תל אביב", "חניון רידינג, יש מקום", "דני"));
         reports.add(new ParkingReport("הרצליה", "קניון שבעת הכוכבים קומה 2", "רונית"));
