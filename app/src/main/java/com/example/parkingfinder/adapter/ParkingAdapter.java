@@ -3,58 +3,81 @@ package com.example.parkingfinder.adapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.parkingfinder.R;
 import com.example.parkingfinder.model.ParkingReport;
-import com.google.android.material.button.MaterialButton;
-import java.util.ArrayList;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import java.util.HashMap;
+import java.util.List;
 
-// מחלקה שמנהלת את התצוגה של הרשימה
 public class ParkingAdapter extends RecyclerView.Adapter<ParkingAdapter.ParkingViewHolder> {
 
-    // רשימת הדיווחים שנוצג
-    private ArrayList<ParkingReport> parkingList;
+    private List<ParkingReport> parkingList;
+    private final FirebaseUser currentUser;
+    private final OnItemClickListener listener;
 
-    // בנאי שמקבל את הרשימה
-    public ParkingAdapter(ArrayList<ParkingReport> parkingList) {
-        this.parkingList = parkingList;
+    public interface OnItemClickListener {
+        void onLikeClick(ParkingReport report);
+        void onParkClick(ParkingReport report);
     }
 
-    // יצירת השורה הוויזואלית (Inflate)
+    public ParkingAdapter(List<ParkingReport> parkingList, OnItemClickListener listener) {
+        this.parkingList = parkingList;
+        this.currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        this.listener = listener;
+    }
+
     @NonNull
     @Override
     public ParkingViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        // טעינת קובץ ה-XML של שורה בודדת
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_parking, parent, false);
         return new ParkingViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull ParkingViewHolder holder, int position) {
-        // שליפת הדיווח הנוכחי לפי המיקום ברשימה
         ParkingReport currentReport = parkingList.get(position);
 
-        // עדכון הטקסטים על המסך
-        holder.tvArea.setText("אזור: " + currentReport.getArea());
+        if (currentReport.getLikes() == null) {
+            currentReport.setLikes(new HashMap<>());
+        }
+
+        String reporterEmail = currentReport.getReporterEmail() != null ? currentReport.getReporterEmail() : "אלמוני";
+
+        holder.tvArea.setText(currentReport.getArea());
         holder.tvDescription.setText(currentReport.getDescription());
-        holder.tvReporter.setText("דווח ע''י: " + currentReport.getReportedBy());
+        holder.tvReporter.setText("דווח ע\"י: " + reporterEmail);
         holder.btnLike.setText(String.valueOf(currentReport.getLikesCount()));
 
-        // האזנה ללחיצה על כפתור לייק
-        holder.btnLike.setOnClickListener(v -> {
-            currentReport.addLike(); // עדכון בלוגיקה
-            notifyItemChanged(position); // רענון השורה הספציפית הזו במסך
-        });
+        if (currentUser != null && currentReport.getLikes().containsKey(currentUser.getUid())) {
+            holder.btnLike.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_like_filled, 0, 0, 0);
+        } else {
+            holder.btnLike.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_like, 0, 0, 0);
+        }
 
-        holder.tvArea.setOnClickListener(v -> {
-            // יצירת כתובת לחיפוש בגוגל מפות
-            String mapUri = "geo:0,0?q=" + currentReport.getArea();
-            android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(mapUri));
-            // התחלת האפליקציה החיצונית
-            v.getContext().startActivity(intent);
-        });
+        // Park/Un-park logic
+        if (currentReport.isOccupied()) {
+            if (currentUser != null && currentUser.getUid().equals(currentReport.getOccupiedBy())) {
+                // Occupied by the current user
+                holder.btnPark.setText("יוצא מהחניה");
+                holder.btnPark.setEnabled(true);
+            } else {
+                // Occupied by someone else
+                holder.btnPark.setText("תפוס");
+                holder.btnPark.setEnabled(false);
+            }
+        } else {
+            // Free to park
+            holder.btnPark.setText("החנתי שם");
+            holder.btnPark.setEnabled(true);
+        }
+
+        holder.btnLike.setOnClickListener(v -> listener.onLikeClick(currentReport));
+        holder.btnPark.setOnClickListener(v -> listener.onParkClick(currentReport));
     }
 
     @Override
@@ -62,10 +85,14 @@ public class ParkingAdapter extends RecyclerView.Adapter<ParkingAdapter.ParkingV
         return parkingList.size();
     }
 
-    // מחלקה פנימית שמחזיקה את הרכיבים של שורה אחת
+    public void updateList(List<ParkingReport> newList) {
+        parkingList = newList;
+        notifyDataSetChanged();
+    }
+
     public static class ParkingViewHolder extends RecyclerView.ViewHolder {
         TextView tvArea, tvDescription, tvReporter;
-        MaterialButton btnLike;
+        Button btnLike, btnPark;
 
         public ParkingViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -73,6 +100,7 @@ public class ParkingAdapter extends RecyclerView.Adapter<ParkingAdapter.ParkingV
             tvDescription = itemView.findViewById(R.id.tvDescription);
             tvReporter = itemView.findViewById(R.id.tvReporter);
             btnLike = itemView.findViewById(R.id.btnLike);
+            btnPark = itemView.findViewById(R.id.btnPark);
         }
     }
 }

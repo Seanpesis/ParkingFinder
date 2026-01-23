@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="israeli_cities">
+        <item>תל אביב-יפו</item>
+        <item>ירושלים</item>
+        <item>חיפה</item>
+        <item>ראשון לציון</item>
+        <item>פתח תקווה</item>
+        <item>אשדוד</item>
+        <item>נתניה</item>
+        <item>באר שבע</item>
+        <item>בני ברק</item>
+        <item>חולון</item>
+        <item>רמת גן</item>
+        <item>אשקלון</item>
+        <item>רחובות</item>
+        <item>בת ים</item>
+        <item>הרצליה</item>
+        <item>כפר סבא</item>
+        <item>חדרה</item>
+        <item>מודיעין-מכבים-רעות</item>
+        <item>לוד</item>
+        <item>רעננה</item>
+        <item>רמלה</item>
+        <item>גבעתיים</item>
+        <item>הוד השרון</item>
+        <item>קריית אתא</item>
+        <item>קריית גת</item>
+        <item>אילת</item>
+        <item>נהריה</item>
+        <item>עכו</item>
+        <item>טבריה</item>
+        <item>צפת</item>
+    </string-array>
+</resources>

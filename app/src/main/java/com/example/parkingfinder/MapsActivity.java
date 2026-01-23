@@ -29,13 +29,9 @@ public class MapsActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        //handle permissions first, before map is created. not depicted here
-
         //load/initialize the osmdroid configuration, this can be done once in your application
         Configuration.getInstance().load(getApplicationContext(),
                 PreferenceManager.getDefaultSharedPreferences(getApplicationContext()));
-        //setting this before the layout is inflated is a good idea
-        //it 'should' ensure that the map has a writable cache path
 
         setContentView(R.layout.activity_maps);
 
@@ -45,10 +41,7 @@ public class MapsActivity extends AppCompatActivity {
         map.getController().setZoom(15.0);
 
         requestPermissionsIfNecessary(new String[]{
-                // if you need to show the current location, change this permission to
-                // Manifest.permission.ACCESS_FINE_LOCATION
-                Manifest.permission.ACCESS_COARSE_LOCATION,
-                // WRITE_EXTERNAL_STORAGE is required in order to show the map
+                Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE
         });
 
@@ -89,20 +82,12 @@ public class MapsActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        //this will refresh the osmdroid configuration on resuming. 
-        //if you make changes to the configuration, use 
-        //SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        //Configuration.getInstance().load(this, PreferenceManager.getDefaultSharedPreferences(this));
         map.onResume(); //needed for compass, my location overlays, v6.0.0 and up
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        //this will refresh the osmdroid configuration on resuming. 
-        //if you make changes to the configuration, use 
-        //SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        //Configuration.getInstance().save(this, prefs);
         map.onPause();  //needed for compass, my location overlays, v6.0.0 and up
     }
 

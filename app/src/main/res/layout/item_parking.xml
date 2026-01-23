@@ -54,6 +54,16 @@
             app:layout_constraintTop_toBottomOf="@id/tvDescription"
             tools:text="0" />
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnPark"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            app:layout_constraintEnd_toStartOf="@id/btnLike"
+            app:layout_constraintTop_toBottomOf="@id/tvDescription"
+            android:text="החנתי שם" />
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </com.google.android.material.card.MaterialCardView>
