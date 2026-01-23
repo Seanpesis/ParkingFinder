@@ -67,7 +67,6 @@ public class MainActivity extends AppCompatActivity implements ParkingAdapter.On
         setupCitySearch();
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        // We pass an empty list to start, it will be populated from Firebase
         adapter = new ParkingAdapter(new ArrayList<>(), this);
         recyclerView.setAdapter(adapter);
 
@@ -125,7 +124,6 @@ public class MainActivity extends AppCompatActivity implements ParkingAdapter.On
                 allReports.clear();
                 for (DataSnapshot data : snapshot.getChildren()) {
                     ParkingReport report = data.getValue(ParkingReport.class);
-                    // *** FIX: Only add reports that are NOT occupied to the main list ***
                     if (report != null && !report.isOccupied()) {
                         report.setReportId(data.getKey());
                         allReports.add(report);
@@ -156,23 +154,53 @@ public class MainActivity extends AppCompatActivity implements ParkingAdapter.On
 
     @Override
     public void onLikeClick(ParkingReport report) {
-        // ... like logic is correct
+        if (report.getReportId() == null) return;
+        DatabaseReference reportRef = mDatabase.child(report.getReportId());
+
+        reportRef.runTransaction(new Transaction.Handler() {
+            @NonNull
+            @Override
+            public Transaction.Result doTransaction(@NonNull MutableData mutableData) {
+                ParkingReport p = mutableData.getValue(ParkingReport.class);
+                if (p == null) {
+                    return Transaction.success(mutableData);
+                }
+
+                if (p.getLikes() == null) {
+                    p.setLikes(new HashMap<>());
+                }
+
+                if (p.getLikes().containsKey(currentUser.getUid())) {
+                    p.setLikesCount(p.getLikesCount() - 1);
+                    p.getLikes().remove(currentUser.getUid());
+                } else {
+                    p.setLikesCount(p.getLikesCount() + 1);
+                    p.getLikes().put(currentUser.getUid(), true);
+                }
+
+                mutableData.setValue(p);
+                return Transaction.success(mutableData);
+            }
+
+            @Override
+            public void onComplete(DatabaseError databaseError, boolean b, DataSnapshot dataSnapshot) {
+                // Transaction completed
+            }
+        });
     }
 
     @Override
     public void onParkClick(ParkingReport report) {
         if (report.getReportId() == null) return;
-
         DatabaseReference reportRef = mDatabase.child(report.getReportId());
 
+        // The logic from the adapter ensures this is only clickable for valid states
         if (report.isOccupied()) {
-            // Can only be freed by the user who occupied it
-            if (currentUser != null && currentUser.getUid().equals(report.getOccupiedBy())) {
+             if (currentUser != null && currentUser.getUid().equals(report.getOccupiedBy())) {
                 reportRef.child("occupied").setValue(false);
                 reportRef.child("occupiedBy").setValue(null);
             }
         } else {
-            // Can be occupied by any user
             reportRef.child("occupied").setValue(true);
             reportRef.child("occupiedBy").setValue(currentUser.getUid());
         }

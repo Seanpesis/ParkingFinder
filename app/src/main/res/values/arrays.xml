@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="israeli_cities">
+        <item>כל הערים</item> <!-- Added option to clear filter -->
         <item>תל אביב-יפו</item>
         <item>ירושלים</item>
         <item>חיפה</item>

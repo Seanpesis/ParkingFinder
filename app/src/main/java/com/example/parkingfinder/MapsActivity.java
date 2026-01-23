@@ -2,51 +2,102 @@ package com.example.parkingfinder;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.location.Location;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.widget.Toast;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import org.osmdroid.config.Configuration;
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
-import org.osmdroid.views.MapView;
-import org.osmdroid.util.GeoPoint;
-import org.osmdroid.views.overlay.Marker;
+
+import com.example.parkingfinder.model.ParkingReport;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.example.parkingfinder.model.ParkingReport;
+
+import org.osmdroid.config.Configuration;
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
+import org.osmdroid.util.GeoPoint;
+import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.Marker;
+import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider;
+import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay;
 
 public class MapsActivity extends AppCompatActivity {
 
     private MapView map = null;
-    private final int REQUEST_PERMISSIONS_REQUEST_CODE = 1;
     private DatabaseReference mDatabase;
+    private FusedLocationProviderClient fusedLocationClient;
+
+    private final ActivityResultLauncher<String> requestPermissionLauncher = registerForActivityResult(
+            new ActivityResultContracts.RequestPermission(),
+            isGranted -> {
+                if (isGranted) {
+                    setupMap();
+                } else {
+                    Toast.makeText(this, "Permission denied, showing default location.", Toast.LENGTH_SHORT).show();
+                    setupMap();
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        //load/initialize the osmdroid configuration, this can be done once in your application
         Configuration.getInstance().load(getApplicationContext(),
                 PreferenceManager.getDefaultSharedPreferences(getApplicationContext()));
 
         setContentView(R.layout.activity_maps);
 
-        map = (MapView) findViewById(R.id.map);
+        map = findViewById(R.id.map);
         map.setTileSource(TileSourceFactory.MAPNIK);
+        map.setMultiTouchControls(true);
 
-        map.getController().setZoom(15.0);
-
-        requestPermissionsIfNecessary(new String[]{
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
-        });
-
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         mDatabase = FirebaseDatabase.getInstance().getReference("reports");
+
+        checkLocationPermission();
         addMarkersFromFirebase();
+    }
+
+    private void checkLocationPermission() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            setupMap();
+        } else {
+            requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION);
+        }
+    }
+
+    private void setupMap() {
+        // My Location Overlay
+        MyLocationNewOverlay locationOverlay = new MyLocationNewOverlay(new GpsMyLocationProvider(this), map);
+        locationOverlay.enableMyLocation();
+        map.getOverlays().add(locationOverlay);
+
+        // Center map on current location if permission is granted
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            fusedLocationClient.getLastLocation().addOnSuccessListener(this, location -> {
+                if (location != null) {
+                    GeoPoint startPoint = new GeoPoint(location.getLatitude(), location.getLongitude());
+                    map.getController().setZoom(15.0);
+                    map.getController().setCenter(startPoint);
+                } else {
+                    // Default location if current location is not available
+                    map.getController().setZoom(10.0);
+                    map.getController().setCenter(new GeoPoint(32.0853, 34.7818)); // Tel Aviv
+                }
+            });
+        } else {
+            // Default location if no permission
+            map.getController().setZoom(10.0);
+            map.getController().setCenter(new GeoPoint(32.0853, 34.7818)); // Tel Aviv
+        }
     }
 
     private void addMarkersFromFirebase() {
@@ -55,26 +106,22 @@ public class MapsActivity extends AppCompatActivity {
             public void onDataChange(DataSnapshot dataSnapshot) {
                 for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                     ParkingReport report = snapshot.getValue(ParkingReport.class);
-                    if (report != null && report.getLatitude() != 0 && report.getLongitude() != 0) {
-                        GeoPoint startPoint = new GeoPoint(report.getLatitude(), report.getLongitude());
-                        Marker startMarker = new Marker(map);
-                        startMarker.setPosition(startPoint);
-                        startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-                        startMarker.setTitle(report.getArea());
-                        startMarker.setSnippet(report.getDescription());
-                        map.getOverlays().add(startMarker);
-
-                        if(map.getOverlays().size() == 1) {
-                           map.getController().setCenter(startPoint);
-                        }
+                    if (report != null && !report.isOccupied() && report.getLatitude() != 0 && report.getLongitude() != 0) {
+                        GeoPoint point = new GeoPoint(report.getLatitude(), report.getLongitude());
+                        Marker marker = new Marker(map);
+                        marker.setPosition(point);
+                        marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+                        marker.setTitle(report.getArea());
+                        marker.setSnippet(report.getDescription());
+                        map.getOverlays().add(marker);
                     }
                 }
-                map.invalidate(); // Refresh the map
+                map.invalidate();
             }
 
             @Override
             public void onCancelled(DatabaseError databaseError) {
-                // Getting Post failed, log a message
+                Toast.makeText(MapsActivity.this, "Failed to load markers.", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -82,35 +129,12 @@ public class MapsActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        map.onResume(); //needed for compass, my location overlays, v6.0.0 and up
+        map.onResume();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        map.onPause();  //needed for compass, my location overlays, v6.0.0 and up
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == REQUEST_PERMISSIONS_REQUEST_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // Permission granted
-            } else {
-                // Permission denied
-            }
-        }
-    }
-
-    private void requestPermissionsIfNecessary(String[] permissions) {
-        for (String permission : permissions) {
-            if (ContextCompat.checkSelfPermission(this, permission)
-                    != PackageManager.PERMISSION_GRANTED) {
-                // Permission is not granted
-                ActivityCompat.requestPermissions(this, permissions, REQUEST_PERMISSIONS_REQUEST_CODE);
-                return;
-            }
-        }
+        map.onPause();
     }
 }

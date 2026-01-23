@@ -9,6 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.parkingfinder.R;
 import com.example.parkingfinder.model.ParkingReport;
+import com.google.android.material.button.MaterialButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import java.util.HashMap;
@@ -51,31 +52,30 @@ public class ParkingAdapter extends RecyclerView.Adapter<ParkingAdapter.ParkingV
         holder.tvArea.setText(currentReport.getArea());
         holder.tvDescription.setText(currentReport.getDescription());
         holder.tvReporter.setText("דווח ע\"י: " + reporterEmail);
-        holder.btnLike.setText(String.valueOf(currentReport.getLikesCount()));
 
+        // Set like button state
+        holder.btnLike.setText(String.valueOf(currentReport.getLikesCount()));
         if (currentUser != null && currentReport.getLikes().containsKey(currentUser.getUid())) {
-            holder.btnLike.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_like_filled, 0, 0, 0);
+            holder.btnLike.setIconResource(R.drawable.ic_like_filled);
         } else {
-            holder.btnLike.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_like, 0, 0, 0);
+            holder.btnLike.setIconResource(R.drawable.ic_like);
         }
 
-        // Park/Un-park logic
+        // Set park/un-park button state
         if (currentReport.isOccupied()) {
             if (currentUser != null && currentUser.getUid().equals(currentReport.getOccupiedBy())) {
-                // Occupied by the current user
                 holder.btnPark.setText("יוצא מהחניה");
                 holder.btnPark.setEnabled(true);
             } else {
-                // Occupied by someone else
                 holder.btnPark.setText("תפוס");
                 holder.btnPark.setEnabled(false);
             }
         } else {
-            // Free to park
             holder.btnPark.setText("החנתי שם");
             holder.btnPark.setEnabled(true);
         }
 
+        // Set listeners
         holder.btnLike.setOnClickListener(v -> listener.onLikeClick(currentReport));
         holder.btnPark.setOnClickListener(v -> listener.onParkClick(currentReport));
     }
@@ -92,7 +92,7 @@ public class ParkingAdapter extends RecyclerView.Adapter<ParkingAdapter.ParkingV
 
     public static class ParkingViewHolder extends RecyclerView.ViewHolder {
         TextView tvArea, tvDescription, tvReporter;
-        Button btnLike, btnPark;
+        MaterialButton btnLike, btnPark; // Use MaterialButton
 
         public ParkingViewHolder(@NonNull View itemView) {
             super(itemView);
