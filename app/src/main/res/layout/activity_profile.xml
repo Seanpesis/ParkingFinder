@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".ProfileActivity">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            style="@style/Widget.MaterialComponents.Toolbar.Primary"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:title="הפרופיל שלי" />
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardElevation="4dp"
+                app:cardCornerRadius="12dp"
+                android:layout_marginBottom="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:id="@+id/tvEmail"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6"
+                        tools:text="user@example.com" />
+
+                    <TextView
+                        android:id="@+id/tvTotalReports"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
+                        tools:text="סך הכל דיווחים: 0" />
+
+                    <TextView
+                        android:id="@+id/tvTotalParks"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
+                        tools:text="סך הכל חניות: 0" />
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="הדיווחים שלי"
+                android:paddingTop="16dp"
+                android:paddingBottom="8dp"
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvMyReports"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                tools:listitem="@layout/item_parking"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="חניות שהחניתי"
+                android:paddingTop="16dp"
+                android:paddingBottom="8dp"
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvMyParks"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                tools:listitem="@layout/item_parking"/>
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</LinearLayout>
