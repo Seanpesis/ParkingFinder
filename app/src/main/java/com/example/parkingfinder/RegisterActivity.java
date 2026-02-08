@@ -46,7 +46,8 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     private void registerUser() {
-        Toast.makeText(this, "כפתור הרשמה נלחץ ✅", Toast.LENGTH_SHORT).show();
+        // Toast לבדיקת לחיצה על כפתור
+        Toast.makeText(this, "כפתור הרשמה נלחץ", Toast.LENGTH_SHORT).show();
 
         String email = etEmail.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
@@ -66,12 +67,15 @@ public class RegisterActivity extends AppCompatActivity {
 
                     if (task.isSuccessful()) {
                         FirebaseUser user = mAuth.getCurrentUser();
+                        Toast.makeText(RegisterActivity.this, "הרשמה בוצעה בהצלחה!", Toast.LENGTH_SHORT).show();
+
                         Intent intent = new Intent(RegisterActivity.this, MainActivity.class);
                         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
                         startActivity(intent);
                         finish();
                     } else {
-                        Toast.makeText(RegisterActivity.this, "הרשמה נכשלה: " + task.getException().getMessage(),
+                        Toast.makeText(RegisterActivity.this,
+                                "הרשמה נכשלה: " + task.getException().getMessage(),
                                 Toast.LENGTH_LONG).show();
                     }
                 });

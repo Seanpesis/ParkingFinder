@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "363551304254",
+    "firebase_url": "https://parkingfinder-eeed5-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "parkingfinder-eeed5",
+    "storage_bucket": "parkingfinder-eeed5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:363551304254:android:e17a72a663d129e053bf6f",
+        "android_client_info": {
+          "package_name": "com.example.parkingfinder"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAWJstPcBbIVmddlbT3XrbyvueTfY1l4VI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
