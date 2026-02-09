@@ -5,6 +5,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -18,7 +20,9 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.MutableData;
 import com.google.firebase.database.Query;
+import com.google.firebase.database.Transaction;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
@@ -28,9 +32,7 @@ import java.util.List;
 public class ProfileActivity extends AppCompatActivity implements ParkingAdapter.OnItemClickListener {
 
     private TextView tvEmail, tvTotalReports, tvTotalParks;
-    private RecyclerView rvMyReports, rvMyParks;
     private ParkingAdapter myReportsAdapter, myParksAdapter;
-    private List<ParkingReport> myReportsList, myParksList;
 
     private DatabaseReference mDatabase;
     private FirebaseUser currentUser;
@@ -42,8 +44,11 @@ public class ProfileActivity extends AppCompatActivity implements ParkingAdapter
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setDisplayShowHomeEnabled(true);
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setDisplayHomeAsUpEnabled(true);
+            actionBar.setDisplayShowHomeEnabled(true);
+        }
 
         currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {
@@ -54,25 +59,22 @@ public class ProfileActivity extends AppCompatActivity implements ParkingAdapter
         tvEmail = findViewById(R.id.tvEmail);
         tvTotalReports = findViewById(R.id.tvTotalReports);
         tvTotalParks = findViewById(R.id.tvTotalParks);
-        rvMyReports = findViewById(R.id.rvMyReports);
-        rvMyParks = findViewById(R.id.rvMyParks);
+        RecyclerView rvMyReports = findViewById(R.id.rvMyReports);
+        RecyclerView rvMyParks = findViewById(R.id.rvMyParks);
 
         mDatabase = FirebaseDatabase.getInstance().getReference("reports");
 
-        setupRecyclerViews();
+        setupRecyclerViews(rvMyReports, rvMyParks);
         loadProfileData();
     }
 
-    private void setupRecyclerViews() {
-        myReportsList = new ArrayList<>();
-        myParksList = new ArrayList<>();
-
+    private void setupRecyclerViews(RecyclerView rvMyReports, RecyclerView rvMyParks) {
         rvMyReports.setLayoutManager(new LinearLayoutManager(this));
-        myReportsAdapter = new ParkingAdapter(myReportsList, this);
+        myReportsAdapter = new ParkingAdapter(this);
         rvMyReports.setAdapter(myReportsAdapter);
 
         rvMyParks.setLayoutManager(new LinearLayoutManager(this));
-        myParksAdapter = new ParkingAdapter(myParksList, this);
+        myParksAdapter = new ParkingAdapter(this);
         rvMyParks.setAdapter(myParksAdapter);
     }
 
@@ -83,7 +85,7 @@ public class ProfileActivity extends AppCompatActivity implements ParkingAdapter
         myReportsQuery.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                myReportsList.clear();
+                List<ParkingReport> myReportsList = new ArrayList<>();
                 for (DataSnapshot data : snapshot.getChildren()) {
                     ParkingReport report = data.getValue(ParkingReport.class);
                     if (report != null) {
@@ -91,8 +93,8 @@ public class ProfileActivity extends AppCompatActivity implements ParkingAdapter
                         myReportsList.add(report);
                     }
                 }
-                myReportsAdapter.updateList(myReportsList);
-                tvTotalReports.setText("סך הכל דיווחים: " + myReportsList.size());
+                myReportsAdapter.submitList(myReportsList);
+                tvTotalReports.setText(getString(R.string.total_reports_format, myReportsList.size()));
             }
 
             @Override
@@ -105,7 +107,7 @@ public class ProfileActivity extends AppCompatActivity implements ParkingAdapter
         myParksQuery.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                myParksList.clear();
+                List<ParkingReport> myParksList = new ArrayList<>();
                 for (DataSnapshot data : snapshot.getChildren()) {
                     ParkingReport report = data.getValue(ParkingReport.class);
                     if (report != null) {
@@ -113,8 +115,8 @@ public class ProfileActivity extends AppCompatActivity implements ParkingAdapter
                         myParksList.add(report);
                     }
                 }
-                myParksAdapter.updateList(myParksList);
-                tvTotalParks.setText("סך הכל חניות: " + myParksList.size());
+                myParksAdapter.submitList(myParksList);
+                tvTotalParks.setText(getString(R.string.total_parks_format, myParksList.size()));
             }
 
             @Override
@@ -126,24 +128,44 @@ public class ProfileActivity extends AppCompatActivity implements ParkingAdapter
 
     @Override
     public void onLikeClick(ParkingReport report) {
-        // Not implemented in this screen for simplicity
+        if (report.getReportId() == null) return;
+        DatabaseReference reportRef = mDatabase.child(report.getReportId());
+
+        reportRef.runTransaction(new Transaction.Handler() {
+            @NonNull
+            @Override
+            public Transaction.Result doTransaction(@NonNull MutableData mutableData) {
+                ParkingReport p = mutableData.getValue(ParkingReport.class);
+                if (p == null) return Transaction.success(mutableData);
+
+                if (p.getLikes() == null) p.setLikes(new HashMap<>());
+
+                if (p.getLikes().containsKey(currentUser.getUid())) {
+                    p.setLikesCount(p.getLikesCount() - 1);
+                    p.getLikes().remove(currentUser.getUid());
+                } else {
+                    p.setLikesCount(p.getLikesCount() + 1);
+                    p.getLikes().put(currentUser.getUid(), true);
+                }
+
+                mutableData.setValue(p);
+                return Transaction.success(mutableData);
+            }
+
+            @Override
+            public void onComplete(@Nullable DatabaseError error, boolean committed, @Nullable DataSnapshot currentData) {}
+        });
     }
 
     @Override
     public void onParkClick(ParkingReport report) {
-        if (report.getReportId() == null) {
-            Toast.makeText(this, "שגיאה: לא ניתן לעדכן דיווח", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
+        if (report.getReportId() == null) return;
         DatabaseReference reportRef = mDatabase.child(report.getReportId());
 
         if (report.getOccupiedBy() != null && report.getOccupiedBy().equals(currentUser.getUid())) {
-            // Free up the parking spot
             reportRef.child("occupied").setValue(false);
             reportRef.child("occupiedBy").setValue(null);
         } else if (!report.isOccupied()) {
-            // Park in the spot (only if it's free)
             reportRef.child("occupied").setValue(true);
             reportRef.child("occupiedBy").setValue(currentUser.getUid());
         }
@@ -151,7 +173,7 @@ public class ProfileActivity extends AppCompatActivity implements ParkingAdapter
 
     @Override
     public boolean onSupportNavigateUp() {
-        onBackPressed();
+        finish();
         return true;
     }
 }

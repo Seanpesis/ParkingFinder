@@ -9,6 +9,7 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -35,7 +36,6 @@ import java.util.stream.Collectors;
 
 public class MainActivity extends AppCompatActivity implements ParkingAdapter.OnItemClickListener {
 
-    private RecyclerView recyclerView;
     private ParkingAdapter adapter;
     private List<ParkingReport> allReports;
     private AutoCompleteTextView actvCitySearch;
@@ -61,13 +61,13 @@ public class MainActivity extends AppCompatActivity implements ParkingAdapter.On
         allReports = new ArrayList<>();
 
         actvCitySearch = findViewById(R.id.actvCitySearch);
-        recyclerView = findViewById(R.id.recyclerView);
+        RecyclerView recyclerView = findViewById(R.id.recyclerView);
         FloatingActionButton fabAdd = findViewById(R.id.fabAdd);
 
         setupCitySearch();
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new ParkingAdapter(new ArrayList<>(), this);
+        adapter = new ParkingAdapter(this);
         recyclerView.setAdapter(adapter);
 
         mDatabase = FirebaseDatabase.getInstance().getReference("reports");
@@ -149,7 +149,7 @@ public class MainActivity extends AppCompatActivity implements ParkingAdapter.On
                     .filter(report -> report.getArea().contains(city))
                     .collect(Collectors.toList());
         }
-        adapter.updateList(filteredReports);
+        adapter.submitList(filteredReports);
     }
 
     @Override
@@ -183,8 +183,7 @@ public class MainActivity extends AppCompatActivity implements ParkingAdapter.On
             }
 
             @Override
-            public void onComplete(DatabaseError databaseError, boolean b, DataSnapshot dataSnapshot) {
-                // Transaction completed
+            public void onComplete(@Nullable DatabaseError error, boolean committed, @Nullable DataSnapshot currentData) {
             }
         });
     }
@@ -194,7 +193,6 @@ public class MainActivity extends AppCompatActivity implements ParkingAdapter.On
         if (report.getReportId() == null) return;
         DatabaseReference reportRef = mDatabase.child(report.getReportId());
 
-        // The logic from the adapter ensures this is only clickable for valid states
         if (report.isOccupied()) {
              if (currentUser != null && currentUser.getUid().equals(report.getOccupiedBy())) {
                 reportRef.child("occupied").setValue(false);

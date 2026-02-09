@@ -4,9 +4,8 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
-import android.location.Location;
 import android.os.Bundle;
-import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
@@ -15,6 +14,7 @@ import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
@@ -31,12 +31,15 @@ import com.google.firebase.database.FirebaseDatabase;
 import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 public class AddReportActivity extends AppCompatActivity {
 
+    private static final String TAG = "AddReportActivity";
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 100;
+
     private AutoCompleteTextView actvCity;
     private TextInputEditText etStreet, etDesc;
-    private Button btnSave, btnRefreshLocation;
     private ProgressBar progressBar;
 
     private FusedLocationProviderClient fusedLocationClient;
@@ -46,8 +49,6 @@ public class AddReportActivity extends AppCompatActivity {
     private double selectedLat = 0;
     private double selectedLng = 0;
 
-    private static final int LOCATION_PERMISSION_REQUEST_CODE = 100;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -55,21 +56,23 @@ public class AddReportActivity extends AppCompatActivity {
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setDisplayShowHomeEnabled(true);
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setDisplayHomeAsUpEnabled(true);
+            actionBar.setDisplayShowHomeEnabled(true);
+        }
 
         actvCity = findViewById(R.id.actvCity);
         etStreet = findViewById(R.id.etStreet);
         etDesc = findViewById(R.id.etDesc);
-        btnSave = findViewById(R.id.btnSave);
-        btnRefreshLocation = findViewById(R.id.btnRefreshLocation);
+        Button btnSave = findViewById(R.id.btnSave);
+        Button btnRefreshLocation = findViewById(R.id.btnRefreshLocation);
         progressBar = findViewById(R.id.progressBar);
 
         mDatabase = FirebaseDatabase.getInstance().getReference("reports");
         currentUser = FirebaseAuth.getInstance().getCurrentUser();
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
-        // Populate the city list from the array resource
         String[] cities = getResources().getStringArray(R.array.israeli_cities);
         ArrayAdapter<String> cityAdapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, cities);
         actvCity.setAdapter(cityAdapter);
@@ -82,7 +85,7 @@ public class AddReportActivity extends AppCompatActivity {
 
     @Override
     public boolean onSupportNavigateUp() {
-        onBackPressed();
+        finish();
         return true;
     }
 
@@ -113,10 +116,12 @@ public class AddReportActivity extends AppCompatActivity {
                 if (city != null) {
                     actvCity.setText(city, false);
                 }
-                etStreet.setText(address.getThoroughfare() + " " + address.getSubThoroughfare());
+                String thoroughfare = Objects.toString(address.getThoroughfare(), "");
+                String subThoroughfare = Objects.toString(address.getSubThoroughfare(), "");
+                etStreet.setText(getString(R.string.street_address_format, thoroughfare, subThoroughfare));
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.e(TAG, "Failed to get address from location", e);
         }
     }
 
@@ -126,9 +131,9 @@ public class AddReportActivity extends AppCompatActivity {
             return;
         }
 
-        String city = actvCity.getText().toString().trim();
-        String street = etStreet.getText().toString().trim();
-        String desc = etDesc.getText().toString().trim();
+        String city = Objects.toString(actvCity.getText(), "").trim();
+        String street = Objects.toString(etStreet.getText(), "").trim();
+        String desc = Objects.toString(etDesc.getText(), "").trim();
         String area = city + ", " + street;
 
         if (city.isEmpty() || street.isEmpty()) {
@@ -137,24 +142,23 @@ public class AddReportActivity extends AppCompatActivity {
         }
 
         progressBar.setVisibility(View.VISIBLE);
-        btnSave.setEnabled(false);
 
-        String userId = currentUser.getUid();
-        String email = currentUser.getEmail();
-
-        ParkingReport report = new ParkingReport(userId, email, area, desc, selectedLat, selectedLng);
+        ParkingReport report = new ParkingReport(currentUser.getUid(), currentUser.getEmail(), area, desc, selectedLat, selectedLng);
 
         String key = mDatabase.push().getKey();
         if (key != null) {
             report.setReportId(key);
             mDatabase.child(key).setValue(report).addOnCompleteListener(task -> {
                 progressBar.setVisibility(View.GONE);
-                btnSave.setEnabled(true);
                 if (task.isSuccessful()) {
                     Toast.makeText(AddReportActivity.this, "הדיווח נשמר בהצלחה!", Toast.LENGTH_SHORT).show();
                     finish();
                 } else {
-                    Toast.makeText(AddReportActivity.this, "שגיאה בשמירה: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
+                    String errorMessage = "שגיאה בשמירה";
+                    if (task.getException() != null && task.getException().getMessage() != null) {
+                        errorMessage += ": " + task.getException().getMessage();
+                    }
+                    Toast.makeText(AddReportActivity.this, errorMessage, Toast.LENGTH_LONG).show();
                 }
             });
         }

@@ -2,15 +2,17 @@ package com.example.parkingfinder;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
-import android.location.Location;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
+import androidx.preference.PreferenceManager; // The modern, correct import
 
 import com.example.parkingfinder.model.ParkingReport;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -55,6 +57,14 @@ public class MapsActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_maps);
 
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setDisplayHomeAsUpEnabled(true);
+            actionBar.setDisplayShowHomeEnabled(true);
+        }
+
         map = findViewById(R.id.map);
         map.setTileSource(TileSourceFactory.MAPNIK);
         map.setMultiTouchControls(true);
@@ -66,6 +76,12 @@ public class MapsActivity extends AppCompatActivity {
         addMarkersFromFirebase();
     }
 
+    @Override
+    public boolean onSupportNavigateUp() {
+        finish();
+        return true;
+    }
+
     private void checkLocationPermission() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             setupMap();
@@ -75,12 +91,10 @@ public class MapsActivity extends AppCompatActivity {
     }
 
     private void setupMap() {
-        // My Location Overlay
         MyLocationNewOverlay locationOverlay = new MyLocationNewOverlay(new GpsMyLocationProvider(this), map);
         locationOverlay.enableMyLocation();
         map.getOverlays().add(locationOverlay);
 
-        // Center map on current location if permission is granted
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             fusedLocationClient.getLastLocation().addOnSuccessListener(this, location -> {
                 if (location != null) {
@@ -88,13 +102,11 @@ public class MapsActivity extends AppCompatActivity {
                     map.getController().setZoom(15.0);
                     map.getController().setCenter(startPoint);
                 } else {
-                    // Default location if current location is not available
                     map.getController().setZoom(10.0);
                     map.getController().setCenter(new GeoPoint(32.0853, 34.7818)); // Tel Aviv
                 }
             });
         } else {
-            // Default location if no permission
             map.getController().setZoom(10.0);
             map.getController().setCenter(new GeoPoint(32.0853, 34.7818)); // Tel Aviv
         }
@@ -103,7 +115,7 @@ public class MapsActivity extends AppCompatActivity {
     private void addMarkersFromFirebase() {
         mDatabase.addValueEventListener(new ValueEventListener() {
             @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                     ParkingReport report = snapshot.getValue(ParkingReport.class);
                     if (report != null && !report.isOccupied() && report.getLatitude() != 0 && report.getLongitude() != 0) {
@@ -120,7 +132,7 @@ public class MapsActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onCancelled(DatabaseError databaseError) {
+            public void onCancelled(@NonNull DatabaseError databaseError) {
                 Toast.makeText(MapsActivity.this, "Failed to load markers.", Toast.LENGTH_SHORT).show();
             }
         });

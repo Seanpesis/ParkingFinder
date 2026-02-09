@@ -41,6 +41,7 @@ dependencies {
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("androidx.recyclerview:recyclerview:1.3.2")
+    implementation("androidx.preference:preference-ktx:1.2.1") // Added for modern preferences
 
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:33.1.1"))
