@@ -64,7 +64,6 @@ public class ParkingAdapter extends ListAdapter<ParkingReport, ParkingAdapter.Pa
             tvDescription.setText(report.getDescription());
             tvReporter.setText(itemView.getContext().getString(R.string.reported_by_format, reporterEmail));
 
-            // Like button
             btnLike.setText(String.valueOf(report.getLikesCount()));
             if (currentUser != null && report.getLikes() != null && report.getLikes().containsKey(currentUser.getUid())) {
                 btnLike.setIconResource(R.drawable.ic_like_filled);
@@ -72,7 +71,6 @@ public class ParkingAdapter extends ListAdapter<ParkingReport, ParkingAdapter.Pa
                 btnLike.setIconResource(R.drawable.ic_like);
             }
 
-            // Park button
             if (report.isOccupied()) {
                 if (currentUser != null && currentUser.getUid().equals(report.getOccupiedBy())) {
                     btnPark.setText("יוצא מהחניה");
@@ -86,7 +84,6 @@ public class ParkingAdapter extends ListAdapter<ParkingReport, ParkingAdapter.Pa
                 btnPark.setEnabled(true);
             }
 
-            // Listeners
             btnLike.setOnClickListener(v -> listener.onLikeClick(report));
             btnPark.setOnClickListener(v -> listener.onParkClick(report));
         }
